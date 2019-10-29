@@ -4,6 +4,7 @@ FROM ubuntu:18.04 AS build
 RUN apt-get update && apt-get install -y --no-install-recommends \
   ca-certificates \
   build-essential \
+  cmake \
   aria2 \
   tar \
   autoconf \
@@ -39,9 +40,18 @@ RUN mkdir -p /install/lib/x86_64-linux-gnu/ \
    && cp ./openvino/deployment_tools/inference_engine/lib/intel64/*.mvcmd /install/lib/x86_64-linux-gnu/ \
    && cp ./openvino/deployment_tools/inference_engine/lib/intel64/plugins.xml /install/lib/x86_64-linux-gnu/ \
    && cp -r ./openvino/deployment_tools/inference_engine/lib/intel64/vpu_custom_kernels /install/lib/x86_64-linux-gnu/ \
+   && cp ./openvino/opencv/lib/*.so* /install/lib/x86_64-linux-gnu/ \
    && cp ./openvino/deployment_tools/inference_engine/external/tbb/lib/*.so* /install/lib/x86_64-linux-gnu/
+
+RUN ./openvino/inference_engine/samples/build_samples.sh
+
+RUN mkdir -p /install/bin \
+   && cp ./openvino/opencv/lib/*.so* /install/lib/x86_64-linux-gnu/ \
+   && cp /root/inference_engine_samples_build/intel64/Release/lib/*.so* /install/lib/x86_64-linux-gnu/ \
+   && cp /root/inference_engine_samples_build/intel64/Release/benchmark_app /install/bin/ \
+   && ln -frs /install/lib/x86_64-linux-gnu/libcpu_extension_avx2.so /install/lib/x86_64-linux-gnu/libcpu_extension.so
 
 FROM ubuntu:18.04
 
-COPY --from=build /install /usr/local
+COPY --from=build /install /usr/local/
 RUN ldconfig
